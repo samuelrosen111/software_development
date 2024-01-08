@@ -1,2 +1,1 @@
-# software_development
-In this repo I will add different software projects I'm working on.
+This repository is designed to help me organize my software projects and identify the areas I need to focus on. It also serves to display my software knowledge, showcasing both my strengths and the areas where I need further improvement.
