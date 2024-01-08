@@ -1,1 +1,1 @@
-This repository is designed to help me organize my software projects and identify the areas I need to focus on. It also serves to display my software knowledge, showcasing both my strengths and the areas where I need further improvement.
+This repository is designed to help me organise my software projects and identify the areas I need to focus on. It also displays my software knowledge, showcasing my strengths and the areas where I need to work harder.
