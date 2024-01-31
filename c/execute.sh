@@ -1,24 +1,36 @@
 #!/bin/bash
 
-# Check if gcc (GNU C compiler) is available
-if ! command -v gcc &> /dev/null; then
-    echo "Error: gcc (GNU C compiler) is not installed or not in your PATH."
+# List all C files and numerate them
+echo "Available C programs:"
+files=(*.c)
+for i in "${!files[@]}"; do
+    echo "$((i+1))) ${files[i]}"
+done
+
+# Ask the user to choose a program to compile
+echo "Enter the number of the program you want to compile and run:"
+read -r choice
+
+# Validate the user input
+if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#files[@]}" ]; then
+    echo "Invalid selection."
     exit 1
 fi
 
-# Check if walkthrough.c exists in the current directory
-if [ ! -f "walkthrough.c" ]; then
-    echo "Error: 'walkthrough.c' file not found in the current directory."
-    exit 1
-fi
+# Compile the selected program
+selected_file="${files[$((choice-1))]}"
+exe_name="${selected_file%.*}"  # Remove the .c extension to use as executable name
 
-# Compile the C program and create an executable named 'walkthrough'
-gcc -o walkthrough walkthrough.c
+# Use gcc to compile the C program
+if gcc "$selected_file" -o "$exe_name"; then
+    echo "Compilation successful. Running $exe_name ..."
 
-# Check if compilation was successful
-if [ $? -eq 0 ]; then
-    echo "Compilation successful. Running 'walkthrough'..."
-    ./walkthrough
+    # Execute the compiled program
+    ./"$exe_name"
+
+    # Remove the compiled executable after execution
+    echo "Removing executable..."
+    rm -f "$exe_name"
 else
     echo "Compilation failed."
 fi

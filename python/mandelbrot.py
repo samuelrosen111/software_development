@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import TextBox
 
 def mandelbrot(complex_number, max_iterations=50):
     z = 0
@@ -9,7 +10,8 @@ def mandelbrot(complex_number, max_iterations=50):
         n += 1
     return n
 
-def plot_mandelbrot(resolution, x_min, x_max, y_min, y_max):
+def plot_mandelbrot(ax, resolution, x_min, x_max, y_min, y_max):
+    ax.clear()  # Clear the previous plot
     width, height = resolution
     x = np.linspace(x_min, x_max, width)
     y = np.linspace(y_min, y_max, height)
@@ -21,46 +23,70 @@ def plot_mandelbrot(resolution, x_min, x_max, y_min, y_max):
         for j in range(height):
             image[j, i] = mandelbrot(Z[j, i])
 
-    plt.figure(figsize=(10, 10))
-    plt.imshow(image, extent=(x_min, x_max, y_min, y_max), cmap='hot', interpolation='bilinear')
-    plt.colorbar()
-    plt.title('Mandelbrot Set')
-    plt.xlabel('Re')
-    plt.ylabel('Im')
-    plt.show()
+    ax.imshow(image, extent=(x_min, x_max, y_min, y_max), cmap='hot', interpolation='bilinear')
+    ax.set_title('Mandelbrot Set')
+    ax.set_xlabel('Real')
+    ax.set_ylabel('Imaginary')
+    plt.draw()  # Redraw the current figure
 
-def zoom_quadrant(x_min, x_max, y_min, y_max, quadrant):
-    x_mid = (x_min + x_max) / 2
-    y_mid = (y_min + y_max) / 2
+def update_plot():
+    plot_mandelbrot(ax, resolution, x_min, x_max, y_min, y_max)
 
-    # NOTE: Quadrant numbering is as follows (y axis should be inverted as seen to get correct quadrant):
-    if quadrant == 1:  # Top-left
-        return x_min, x_mid, y_min, y_mid
-    elif quadrant == 2:  # Top-right
-        return x_mid, x_max, y_min, y_mid
-    elif quadrant == 3:  # Bottom-left
-        return x_min, x_mid, y_mid, y_max
-    elif quadrant == 4:  # Bottom-right
-        return x_mid, x_max, y_mid, y_max
+def submit_real_min(text):
+    global x_min
+    try:
+        x_min = float(text)
+        update_plot()
+    except ValueError:
+        print("Invalid input for Real Min.")
 
-def main():
-    x_min, x_max = -2.5, 1.0
-    y_min, y_max = -1.0, 1.0
-    resolution = (1000, 1000)
+def submit_real_max(text):
+    global x_max
+    try:
+        x_max = float(text)
+        update_plot()
+    except ValueError:
+        print("Invalid input for Real Max.")
 
-    while True:
-        plot_mandelbrot(resolution, x_min, x_max, y_min, y_max)
-        print("\nQuadrants: 1.Top-left  2.Top-right  3.Bottom-left  4.Bottom-right")
-        choice = input("Enter the quadrant to zoom into (or 'exit' to quit): ").strip().lower()
+def submit_imag_min(text):
+    global y_min
+    try:
+        y_min = float(text)
+        update_plot()
+    except ValueError:
+        print("Invalid input for Imaginary Min.")
 
-        if choice == 'exit':
-            break
+def submit_imag_max(text):
+    global y_max
+    try:
+        y_max = float(text)
+        update_plot()
+    except ValueError:
+        print("Invalid input for Imaginary Max.")
 
-        if choice in ['1', '2', '3', '4']:
-            quadrant = int(choice)
-            x_min, x_max, y_min, y_max = zoom_quadrant(x_min, x_max, y_min, y_max, quadrant)
-        else:
-            print("Invalid input. Please enter a number between 1 and 4, or 'exit' to quit.")
+fig, ax = plt.subplots()
+plt.subplots_adjust(left=0.1, bottom=0.4)
+resolution = (1000, 1000)
+x_min, x_max, y_min, y_max = -2.5, 1.0, -1.0, 1.0
 
-if __name__ == '__main__':
-    main()
+# Plot the initial Mandelbrot set
+plot_mandelbrot(ax, resolution, x_min, x_max, y_min, y_max)
+
+# Text boxes for entering the range
+axbox_real_min = plt.axes([0.1, 0.25, 0.2, 0.05])
+text_box_real_min = TextBox(axbox_real_min, 'Real Min', initial=str(x_min))
+text_box_real_min.on_submit(submit_real_min)
+
+axbox_real_max = plt.axes([0.4, 0.25, 0.2, 0.05])
+text_box_real_max = TextBox(axbox_real_max, 'Real Max', initial=str(x_max))
+text_box_real_max.on_submit(submit_real_max)
+
+axbox_imag_min = plt.axes([0.1, 0.15, 0.2, 0.05])
+text_box_imag_min = TextBox(axbox_imag_min, 'Imaginary Min', initial=str(y_min))
+text_box_imag_min.on_submit(submit_imag_min)
+
+axbox_imag_max = plt.axes([0.4, 0.15, 0.2, 0.05])
+text_box_imag_max = TextBox(axbox_imag_max, 'Imaginary Max', initial=str(y_max))
+text_box_imag_max.on_submit(submit_imag_max)
+
+plt.show()
