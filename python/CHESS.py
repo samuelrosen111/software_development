@@ -367,3 +367,15 @@ def main():
 # Run the main function only if this file is the main file (not imported)
 if __name__ == "__main__":
     main()
+
+#TODO: Search for check and checkmate
+#TODO: Implement castling
+#TODO: Implement en-passant
+#TODO: Implement pawn promotion
+#TODO: Implement stalemate
+#TODO: Implement draw by 3 move repetition
+#TODO: Implement draw by 50 move rule
+#TODO: Implement draw by insufficient material
+#TODO: Implement draw by agreement (At each turn a player can offer a draw to their opponent. If the opponent accepts the game ends in a draw. Else the game continues.)
+#TODO: Add option to resign by typing "resign" at any time 
+    
