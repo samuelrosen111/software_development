@@ -89,7 +89,118 @@ def printBoard(board):
     # Print the column labels again for better readability
     print("     " + "     ".join(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']))
 
-def movePiece(board, player_to_move):
+
+def special_moves(board, row_position, col_position, row_target, col_target, player_to_move, board_history):
+    # Existing code for special moves like castling and pawn promotion...
+    
+    current_move = (row_position, col_position, row_target, col_target)
+    special_move_has_been_made = False
+
+    delta_row = row_target - row_position
+    delta_col = col_target - col_position
+
+    # WHITE Pawn promotion
+    if board[row_position][col_position].color == "white" and row_target == 7 and board[row_position][col_position].name == "pawn":
+        special_move_has_been_made = True
+        while True:
+            promotion_piece = input("What piece do you want to promote to? (Queen, Rook, Bishop, Knight): ")
+            if promotion_piece.lower() not in ["queen", "rook", "bishop", "knight"]:
+                print("Incorrect input, please try again. Input should be Queen, Rook, Bishop or Knight")
+                continue
+            else:
+                break
+        if promotion_piece.lower() == "queen":
+            board[row_position][col_position] = Piece(row_position, col_position, "white", "queen", "w_Q")
+        elif promotion_piece.lower() == "rook":
+            board[row_position][col_position] = Piece(row_position, col_position, "white", "rook", "w_R")
+        elif promotion_piece.lower() == "bishop":
+            board[row_position][col_position] = Piece(row_position, col_position, "white", "bishop", "w_B")
+        elif promotion_piece.lower() == "knight":
+            board[row_position][col_position] = Piece(row_position, col_position, "white", "knight", "w_N")
+
+    # BLACK Pawn promotion
+    elif board[row_position][col_position].color == "black" and row_target == 0 and board[row_position][col_position].name == "pawn":
+        special_move_has_been_made = True
+        while True:
+            promotion_piece = input("What piece do you want to promote to? (Queen, Rook, Bishop, Knight): ")
+            if promotion_piece.lower() not in ["queen", "rook", "bishop", "knight"]:
+                print("Incorrect input, please try again. Input should be Queen, Rook, Bishop or Knight")
+                continue
+            else:
+                break
+        if promotion_piece.lower() == "queen":
+            board[row_position][col_position] = Piece(row_position, col_position, "black", "queen", "b_Q")
+        elif promotion_piece.lower() == "rook":
+            board[row_position][col_position] = Piece(row_position, col_position, "black", "rook", "b_R")
+        elif promotion_piece.lower() == "bishop":
+            board[row_position][col_position] = Piece(row_position, col_position, "black", "bishop", "b_B")
+        elif promotion_piece.lower() == "knight":
+            board[row_position][col_position] = Piece(row_position, col_position, "black", "knight", "b_N")
+
+    # Castling and other special moves logic continues unchanged...
+
+    return board, special_move_has_been_made
+
+def enPassant(board, row_position, col_position, row_target, col_target, player_to_move, board_history):
+    # Initialize a flag to track if en passant capture occurred
+    en_passant_capture = False
+
+    # Check if it's the pawn's first move (from its initial position)
+    if player_to_move == "white" and row_position == 1 and row_target == 3:
+        # For white pawn, moving from row 1 to row 3 indicates a two-square move
+        two_square_move = True
+    elif player_to_move == "black" and row_position == 6 and row_target == 4:
+        # For black pawn, moving from row 6 to row 4 indicates a two-square move
+        two_square_move = True
+    else:
+        two_square_move = False
+
+    # Only proceed if it was a two-square move
+    if two_square_move:
+        # Check for adjacent enemy pawns that could potentially capture en passant
+        pawns_to_left = col_position > 0 and board[row_position][col_position - 1] is not None
+        pawns_to_right = col_position < 7 and board[row_position][col_position + 1] is not None
+
+        # If there's a pawn to the left/right, check if it belongs to the opposing player
+        if pawns_to_left and board[row_position][col_position - 1].color != player_to_move:
+            pawns_to_left = board[row_position][col_position - 1].name == "pawn"
+        else:
+            pawns_to_left = False
+
+        if pawns_to_right and board[row_position][col_position + 1].color != player_to_move:
+            pawns_to_right = board[row_position][col_position + 1].name == "pawn"
+        else:
+            pawns_to_right = False
+
+        # If there are eligible pawns for en passant, ask the player which one to capture
+        if pawns_to_left or pawns_to_right:
+            print("En passant capture is available.")
+            if pawns_to_left:
+                print("Enter 'l' to capture the pawn to the left.")
+            if pawns_to_right:
+                print("Enter 'r' to capture the pawn to the right.")
+            choice = input("Your choice (anything else to skip): ")
+
+            # Execute the en passant capture based on the player's choice
+            if choice == 'l' and pawns_to_left:
+                # Remove the captured pawn and move the capturing pawn
+                board[row_position][col_position - 1] = None
+                board[row_position][col_position] = None
+                board[row_target][col_target] = Piece(row_target, col_target, player_to_move, "pawn", player_to_move[0] + "_P")
+                en_passant_capture = True
+            elif choice == 'r' and pawns_to_right:
+                # Remove the captured pawn and move the capturing pawn
+                board[row_position][col_position + 1] = None
+                board[row_position][col_position] = None
+                board[row_target][col_target] = Piece(row_target, col_target, player_to_move, "pawn", player_to_move[0] + "_P")
+                en_passant_capture = True
+
+    # Return the board and whether an en passant capture occurred
+    return board, en_passant_capture
+
+
+def movePiece(board, player_to_move, board_history):
+
     def wrongInput(input_str):
         if len(input_str) != 2:
             print("Incorrect input length, please try again. Input should be A1 to H8")
@@ -118,6 +229,14 @@ def movePiece(board, player_to_move):
         row_target = -1 + int(targetSquare[1])
         col_target = convertLetterToIndex(targetSquare[0])
 
+        board, enPassant_performance = enPassant(board, row_position, col_position, row_target, col_target, player_to_move, board_history)
+        if(enPassant_performance):
+            return board
+
+        board, special_move_has_been_made = special_moves(board, row_position, col_position, row_target, col_target, player_to_move, board_history)
+        if(special_move_has_been_made):
+            return board
+
         if(board[row_position][col_position] is None):
             print("There is no piece at the starting square. Please try again.")
             continue
@@ -134,15 +253,16 @@ def movePiece(board, player_to_move):
         if board[row_position][col_position] is None:
             print("There is no piece at the starting square. Please try again.")
             continue
-        if(move_is_not_legal(board, row_position, col_position, row_target, col_target, player_to_move)):
+        if(move_is_not_legal(board, row_position, col_position, row_target, col_target, player_to_move, board_history)):
             print("That is not a legal move (see reason above). Please try again.")
             continue
         # Move the piece
+        
         board[row_target][col_target] = board[row_position][col_position]
         board[row_position][col_position] = None
         return board
 
-def move_is_not_legal(board, row_position, col_position, row_target, col_target, player_to_move):
+def move_is_not_legal(board, row_position, col_position, row_target, col_target, player_to_move, board_history):
     # AUXILLIARY functions used to check moves for each piece
 
     def rook_move_is_illegal(board, row_position, col_position, row_target, col_target, player_to_move):
@@ -250,6 +370,7 @@ def move_is_not_legal(board, row_position, col_position, row_target, col_target,
     def pawn_move_is_illegal(board, row_position, col_position, row_target, col_target, player_to_move):
         delta_row = row_target - row_position
         delta_col = col_target - col_position
+        #Implements en passant for wite pawn
         # White pawn
         if(player_to_move == "white"):
             # Side capture is always legal
@@ -272,6 +393,8 @@ def move_is_not_legal(board, row_position, col_position, row_target, col_target,
             if(abs(delta_col) == 1 and delta_row == -1 and board[row_target][col_target].color == "white"):
                 return False, "Legal Move"
             # If pawn is in starting position it can move two squares forward or one square forward
+            #Check if pawn is in starting position
+            
             if(delta_col==0 and delta_row==-2 or delta_col==0 and delta_row==-1):
                 return False, "Legal Move"
             # If pawn is not in starting position it can only move one square forward
@@ -347,17 +470,27 @@ def move_is_not_legal(board, row_position, col_position, row_target, col_target,
     
     return False # If all checks are passed it is a legal move
 
+
+
+
+    print("Not implemented yet")
+
+
 def main():
     player_to_move = "white"
     # Create the initial chessboard
     board = createBoard()
     printBoard(board)
+    board_history = [] # Create a list to store the board history to enable en-passant, castling, pawn promotion, 3 move repetition and 50 move rule
 
     # Start the game loop for moving pieces
     while True:
         print("It is " + player_to_move + "'s turn to move.")
-        board = movePiece(board, player_to_move)
+
+        board = movePiece(board, player_to_move, board_history)
         printBoard(board)
+        board_history.append(board)
+
 
         if(player_to_move == "white"):
             player_to_move = "black"
@@ -368,10 +501,16 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+# Additional core functionality to implement:
+
+#TODO: Implement board history to enable en-passant, castling, pawn promotion, 3 move repetition and 50 move rule
 #TODO: Search for check and checkmate
-#TODO: Implement castling
+#DONE: Implement castling
+# --> TODO: look for checkmate when castling
 #TODO: Implement en-passant
-#TODO: Implement pawn promotion
+#DONE: Implement pawn promotion
+# --> TODO: look for checkmate when pawn promotion
 #TODO: Implement stalemate
 #TODO: Implement draw by 3 move repetition
 #TODO: Implement draw by 50 move rule
@@ -379,3 +518,6 @@ if __name__ == "__main__":
 #TODO: Implement draw by agreement (At each turn a player can offer a draw to their opponent. If the opponent accepts the game ends in a draw. Else the game continues.)
 #TODO: Add option to resign by typing "resign" at any time 
     
+
+# Extra features to implement:
+#TODO: Implement GUI
