@@ -12,7 +12,6 @@ class Piece:
         # Adjusted to use self.start_pos for row and col information
         return f"Piece(name={self.name}, short_name={self.short_name}, color={self.color}, row={self.start_pos[0]}, col={self.start_pos[1]})"
 
-
 class Chess:
     def __init__(self):
         self.board = self.create_board()
@@ -82,7 +81,7 @@ class Chess:
         # Print the column labels again for better readability
         print("     " + "     ".join(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']))
 
-    def move_is_invalid(self, from_square, to_square):
+    def move_input_is_invalid(self, from_square, to_square):
         # Is input in correct format?
         if(len(from_square) != 2 or len(to_square) != 2):
             print("Invalid input. Please enter the move in the correct format")
@@ -104,6 +103,23 @@ class Chess:
             print("Invalid input. Please enter the move in the correct format")
             return True
         return False
+    
+    def move_is_invalid(self, from_tuple, to_tuple):
+        # Check if the move is invalid. This function will not check specific piece moves, only if the move is valid in general.
+        board = self.board
+        from_piece = board[from_tuple[0]][from_tuple[1]]
+        to_piece = board[to_tuple[0]][to_tuple[1]]
+        if(from_piece is None):
+            print("There is no piece in the square you want to move from")
+            return True
+        if(from_piece.color != self.turn):
+            print("It's not your turn")
+            return True
+        if(to_piece is not None and to_piece.color == self.turn):
+            print("You can't move to a square with your own piece")
+            return True
+        return False
+    
         
         
     def move(self):
@@ -117,22 +133,25 @@ class Chess:
             print("Format of move should be 'letter(column)' + 'number(row)' eg E2")
             from_square = input("Enter the square you want to move from: ")
             to_square = input("Enter the square you want to move to: ")
-            if(self.move_is_invalid(from_square, to_square)): # No need to pass "self" as an argument - since we are already inside the class it is alrready implied.
+            if(self.move_input_is_invalid(from_square, to_square)): # No need to pass "self" as an argument - since we are already inside the class it is alrready implied.
+                continue
+            # Now we know the input is valid in format, we can transform it to indices
+            from_tuple = transform_input_to_indices(from_square)
+            to_tuple = transform_input_to_indices(to_square)
+            if(self.move_is_invalid(from_tuple, to_tuple)):
                 continue
             else:
                 break
-        
-        from_tuple = transform_input_to_indices(from_square)
-        to_tuple = transform_input_to_indices(to_square)
 
         # Given move is correct, now we can move the piece
         board = self.board
         hold_piece = board[from_tuple[0]][from_tuple[1]]
         board[from_tuple[0]][from_tuple[1]] = None
         board[to_tuple[0]][to_tuple[1]] = hold_piece
-        # Translate the input to row and col indices and tuples
         
-
+        # Move completed, change turn
+        self.turn = "black" if self.turn == "white" else "white"
+        
 
 
 def main():
