@@ -1,1 +1,2 @@
-This repository is designed to help me organise my software projects and identify the areas I need to focus on. It also displays my software knowledge, showcasing my strengths and the areas where I need to work harder.
+This repository is designed to help me organise my software projects and identify the areas I need to improve. Part of the code is generated with the help of AI, if you have questions feel free to ask.
+// Samuel 
