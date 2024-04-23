@@ -12,12 +12,29 @@ class Piece:
         # Adjusted to use self.start_pos for row and col information
         return f"Piece(name={self.name}, short_name={self.short_name}, color={self.color}, row={self.start_pos[0]}, col={self.start_pos[1]})"
 
+class moveHistory:
+    def __init__(self, from_square, to_square, piece, captured_piece):
+        self.from_square = from_square
+        self.to_square = to_square
+        self.delta_row = to_square[0] - from_square[0]
+        self.delta_col = to_square[1] - from_square[1]
+        self.piece = piece
+        self.captured_piece = captured_piece
+
+        # Special cases that can be triggered by a move
+        self.long_castling = False
+        self.short_castling = False
+        self.en_passant = False
+        self.pawn_promotion = False
+        self.check = False
+        self.checkmate = False
 
 class Chess:
     def __init__(self):
         self.board = self.create_board()
         self.turn = 'white'
         self.moves = 0
+        self.move_history = [] # List to store the move history. Append "moveHistory" to this list.
 
 
     def create_board(self):
@@ -135,7 +152,7 @@ class Chess:
         from_row = from_tuple[0]
         to_row = to_tuple[0]
         from_col = from_tuple[1]
-        from_col = to_tuple[1]
+        to_col = to_tuple[1]
 
         # Note: index in the board can be hrd to keep track of. Remember that:
         # [0][0] = A8
@@ -236,6 +253,14 @@ class Chess:
             # [7][0] = A1
             # Starting row black pawns: Chess board index = 6 (!!! program index [1][x]) 
             # Starting row white pawns: Chess board index = 1 (!!! program index [6][x])
+            
+            # Check special case en passant for white pawns
+            if(piece_to_move.color == "white"):
+                last_move = self.move_history[-1]
+                last_move_was_pawn = last_move.piece.name == "pawn"
+                last_move_was_double_pawn_move = abs(last_move.delta_row) == 2
+
+            
 
             if(piece_to_move.color == "white"):
                 # Sideways capture
@@ -250,7 +275,7 @@ class Chess:
                 if(delta_row == 1 and delta_col == 0 and target_square is None):
                     return False
                 return True
-            else:
+            if(piece_to_move.color == "black"):
                 # Sideways capture
                 if(delta_row == -1 and abs(delta_col) == 1 and target_square is not None and target_square.color == "white"):
                     return False
@@ -280,8 +305,52 @@ class Chess:
         if(piece.name == "pawn"):
             return check_pawn_move()
     
+    def special_case_move(self, from_tuple, to_tuple):
+        # This function will check for special cases that can be triggered by a move
+        # Special cases: long_castling, short_castling, en_passant, pawn_promotion, check, checkmate
+        # Note: index in the board can be hard to keep track of. Remember that:
+        # [0][0] = A8
+        # [7][7] = H1
+        # [0][7] = H8
+        # [7][0] = A1
+        # Starting row black pawns: Chess board index = 6 (!!! program index [1][x]) 
+        # Starting row white pawns: Chess board index = 1 (!!! program index [6][x])
 
-    
+        piece_to_move = self.board[from_tuple[0]][from_tuple[1]]
+        target_square = self.board[to_tuple[0]][to_tuple[1]]
+        last_move = self.move_history[-1]
+        previously_moved_piece = last_move.piece
+        
+        # EN PASSANT ---------------------------------------------------------------------------------------------------
+        previous_move_was_two_step_pawn_move = (previously_moved_piece.name == "pawn" and abs(last_move.delta_row) == 2)
+
+        if(piece_to_move.color == "white" and previous_move_was_two_step_pawn_move):
+            #left capture
+            piece_to_the_left_of_previously_moved_pawn = self.board[last_move.to_square[0]][last_move.to_square[1] - 1]
+            piece_to_the_left_of_previously_moved_pawn_is_white_pawn = piece_to_the_left_of_previously_moved_pawn is not None and piece_to_the_left_of_previously_moved_pawn.color == "white" and piece_to_the_left_of_previously_moved_pawn.name == "pawn"
+            same_column = last_move.to_square[1] == to_tuple[1]
+            one_row_difference = abs(last_move.to_square[0] - to_tuple[0]) == 1
+            if(piece_to_the_left_of_previously_moved_pawn_is_white_pawn and same_column and one_row_difference):
+                # Remove the captured pawn
+                self.board[last_move.to_square[0]][last_move.to_square[1] - 1] = None
+                
+
+
+
+
+
+            piece_to_the_right_of_previously_moved_pawn = self.board[last_move.to_square[0]][last_move.to_square[1] + 1]
+            piece_to_the_right_of_previously_moved_pawn_is_white = piece_to_the_right_of_previously_moved_pawn is not None and piece_to_the_right_of_previously_moved_pawn.color == "white"
+
+
+            
+            
+
+
+        pass
+
+
+
     def move(self):
         def transform_input_to_indices(square):
             # Transform the input to row and col indices
@@ -293,7 +362,7 @@ class Chess:
             print("Format of move should be 'letter(column)' + 'number(row)' eg E2")
             from_square = input("Enter the square you want to move from: ")
             to_square = input("Enter the square you want to move to: ")
-            if(self.move_input_is_invalid(from_square, to_square)): # No need to pass "self" as an argument - since we are already inside the class it is alrready implied.
+            if(self.move_input_is_invalid(from_square, to_square)):
                 continue
             # Now we know the input is valid in format, we can transform it to indices
             from_tuple = transform_input_to_indices(from_square)
@@ -328,19 +397,44 @@ class Chess:
             self.moves += 1
             # Move completed, break the loop
             break
+        # Create a moveHistory object and append it to the move_history list
+        move_history_object = moveHistory(from_tuple, to_tuple, hold_piece, board[to_tuple[0]][to_tuple[1]])
+        self.move_history.append(move_history_object) 
+        
+        
+
         
 
 
 
 
 def main():
-    Chess = Chess()
-    Chess.printBoard()
+    chess_game = Chess()
+    chess_game.printBoard()
     while True:
-        Chess.move()
-        Chess.printBoard()
-
+        chess_game.move()
+        chess_game.printBoard()
 
 # Calls the main function, also checks if the file is being run directly
 if __name__ == "__main__":
     main()
+
+
+#TODO: Create move history object list
+#TODO: Implement board history to enable en-passant, castling, pawn promotion, 3 move repetition and 50 move rule
+#TODO: Search for check and checkmate
+#DONE: Implement castling
+# --> TODO: look for checkmate when castling
+#TODO: Implement en-passant
+#DONE: Implement pawn promotion
+# --> TODO: look for checkmate when pawn promotion
+#TODO: Implement stalemate
+#TODO: Implement draw by 3 move repetition
+#TODO: Implement draw by 50 move rule
+#TODO: Implement draw by insufficient material
+#TODO: Implement draw by agreement (At each turn a player can offer a draw to their opponent. If the opponent accepts the game ends in a draw. Else the game continues.)
+#TODO: Add option to resign by typing "resign" at any time 
+    
+
+# Extra features to implement:
+#TODO: Implement GUI
